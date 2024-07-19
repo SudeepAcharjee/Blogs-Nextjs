@@ -1,0 +1,35 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo update npm...
+      - npm update -g npm
+      - echo node -v
+      - node -v
+      - echo npm -v
+      - npm -v
+      - echo install yarn...
+      - npm install -g yarn
+      - echo yarn -v
+      - yarn -v
+  pre_build:
+    commands:
+      - echo Installing source NPM dependencies...
+      - yarn install
+  build:
+    commands:
+      - echo Build started on `date`
+      - yarn run build
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - aws s3 rm s3://eams.dev --recursive
+      - aws s3 sync ./out s3://eams.dev --cache-control max-age=8640000 --exclude "*.html"
+      - aws s3 sync ./out s3://eams.dev --cache-control "no-cache, no-store, must-revalidate, max-age=0" --include "*.html"
+      - aws cloudfront create-invalidation --distribution-id E19DVVOHCJL73E --paths "/*.html"
+      - echo Deploy completed on `date`
+artifacts:
+  base-directory: 'out'
+  files:
+    - '**/*'
